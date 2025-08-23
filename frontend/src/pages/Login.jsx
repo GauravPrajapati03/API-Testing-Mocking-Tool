@@ -1,13 +1,32 @@
 import { useState } from "react";
+import API from "../utils/api";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
 
-  const handleLogin = (e) => {
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    console.log("Logging in with:", { email, password });
+    try {
+      const res = await API.post("/auth/login", form);
+      // console.log(res);
+      localStorage.setItem("token", res.data.token);
+      toast.success("Login successful");
+
+      setForm({ email: "", password: "" });
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
+    } catch (err) {
+      console.log(err);
+      toast.error(err.response?.data?.message || "Login Failed");
+    }
   };
 
   return (
@@ -24,8 +43,8 @@ export default function Login() {
             <input
               type="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@example.com"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
@@ -38,8 +57,8 @@ export default function Login() {
             <input
               type="password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
@@ -57,9 +76,9 @@ export default function Login() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{" "}
-          <a href="#" className="text-blue-600 hover:underline">
-            Sign up
-          </a>
+          <Link to={"/register"} className="text-blue-600 hover:underline">
+            Sign Up
+          </Link>
         </p>
       </div>
     </div>
