@@ -21,42 +21,66 @@ export const saveRequest = async (req, res) => {
   }
 };
 
-// Get all saved requests of a user
-export const getRequests = async (req, res) => {
+// Get all/History of saved requests of a user
+// export const getRequests = async (req, res) => {
+//   try {
+//     const requests = await Request.find({ userId: req.user._id });
+//     res.json(requests);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+export const getHistory = async (req, res) => {
   try {
-    const requests = await Request.find({ userId: req.user._id });
+    const requests = await Request.find({ user: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(50); // last 50 requests
     res.json(requests);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: "Failed to fetch history" });
   }
 };
 
 // Execute request (send API call)
+
 export const executeRequest = async (req, res) => {
   try {
     const { url, method, headers, body } = req.body;
+
+    if (!url || !method) {
+      return res.status(400).json({ error: "URL and method are required" });
+    }
 
     const response = await axios({
       url,
       method,
       headers,
       data: body,
+      validateStatus: () => true,
     });
 
-    res.json({
+    const responseData = {
       status: response.status,
+      statusText: response.statusText,
       headers: response.headers,
       data: response.data,
+    };
+
+    const requestLog = new Request({
+      userId: req.user.id,
+      url,
+      method,
+      headers,
+      body,
+      response: responseData,
     });
+
+    await requestLog.save();
+
+    return res.status(response.status).json(responseData);
   } catch (error) {
-    if (error.response) {
-      res.status(error.response.status).json({
-        status: error.response.status,
-        headers: error.response.headers,
-        data: error.response.data,
-      });
-    } else {
-      res.status(500).json({ message: error.message });
-    }
+    console.error("❌ Request execution error:", error);
+    return res.status(500).json({ error: error.message });
   }
 };

@@ -8,7 +8,7 @@ const requestSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        required: true
+        required: false
     },
     url: {
         type: String,
@@ -27,6 +27,12 @@ const requestSchema = new mongoose.Schema({
         type: Object,
         default: {}
     },
+    response: {
+        status: Number,
+        statusText: String,
+        headers: Object,
+        data: Object
+    }
 }, { timestamps: true });
 
 export default mongoose.model("Request", requestSchema);
